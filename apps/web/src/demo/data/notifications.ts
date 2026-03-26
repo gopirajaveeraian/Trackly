@@ -1,0 +1,78 @@
+import type { Notification } from '@/types';
+import { NotificationType } from '@/types';
+import { DEMO_USER_ID } from './users';
+
+export const notifications: Notification[] = [
+  {
+    id: 'notif-001',
+    type: NotificationType.ASSIGNED,
+    message: 'Sarah Chen assigned you to TRK-15: API response times degraded after adding issue filters',
+    userId: DEMO_USER_ID,
+    issueId: 'iss-015',
+    read: false,
+    createdAt: '2026-03-16T09:00:00.000Z',
+  },
+  {
+    id: 'notif-002',
+    type: NotificationType.MENTIONED,
+    message: 'Marcus Johnson mentioned you in a comment on TRK-9: Implement Kanban board with drag-and-drop columns',
+    userId: DEMO_USER_ID,
+    issueId: 'iss-009',
+    read: false,
+    createdAt: '2026-03-15T14:15:00.000Z',
+  },
+  {
+    id: 'notif-003',
+    type: NotificationType.DUE_DATE,
+    message: 'TRK-15: API response times degraded is past its due date (Mar 10)',
+    userId: DEMO_USER_ID,
+    issueId: 'iss-015',
+    read: false,
+    createdAt: '2026-03-11T00:00:00.000Z',
+  },
+  {
+    id: 'notif-004',
+    type: NotificationType.STATUS_CHANGED,
+    message: 'Priya Patel moved TRK-10: Build issue detail page with sidebar to In Review',
+    userId: DEMO_USER_ID,
+    issueId: 'iss-010',
+    read: true,
+    createdAt: '2026-03-13T10:00:00.000Z',
+  },
+  {
+    id: 'notif-005',
+    type: NotificationType.COMMENT,
+    message: 'Marcus Johnson commented on TRK-15: API response times degraded after adding issue filters',
+    userId: DEMO_USER_ID,
+    issueId: 'iss-015',
+    read: true,
+    createdAt: '2026-03-09T10:00:00.000Z',
+  },
+  {
+    id: 'notif-006',
+    type: NotificationType.STATUS_CHANGED,
+    message: 'Alex Morgan moved TRK-11: Issue CRUD API endpoints to Done',
+    userId: DEMO_USER_ID,
+    issueId: 'iss-011',
+    read: true,
+    createdAt: '2026-03-10T16:00:00.000Z',
+  },
+  {
+    id: 'notif-007',
+    type: NotificationType.ASSIGNED,
+    message: 'Sarah Chen assigned you to TRK-11: Issue CRUD API endpoints',
+    userId: DEMO_USER_ID,
+    issueId: 'iss-011',
+    read: true,
+    createdAt: '2026-03-03T11:00:00.000Z',
+  },
+  {
+    id: 'notif-008',
+    type: NotificationType.COMMENT,
+    message: 'Priya Patel commented on TRK-10: Build issue detail page with sidebar',
+    userId: DEMO_USER_ID,
+    issueId: 'iss-010',
+    read: true,
+    createdAt: '2026-03-11T09:30:00.000Z',
+  },
+];

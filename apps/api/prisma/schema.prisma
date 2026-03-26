@@ -1,0 +1,362 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Enums ──────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  PROJECT_MANAGER
+  DEVELOPER
+  VIEWER
+}
+
+enum IssueType {
+  BUG
+  STORY
+  TASK
+  EPIC
+  SUBTASK
+}
+
+enum Priority {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ProjectType {
+  SCRUM
+  KANBAN
+}
+
+enum SprintStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+}
+
+enum NotificationType {
+  ASSIGNED
+  MENTIONED
+  COMMENT
+  STATUS_CHANGED
+  DUE_DATE
+}
+
+enum IssueLinkType {
+  BLOCKS
+  IS_BLOCKED_BY
+  RELATES_TO
+  DUPLICATES
+}
+
+// ─── Models ─────────────────────────────────────────────────────────────────
+
+model User {
+  id               String    @id @default(uuid())
+  name             String
+  email            String    @unique
+  password         String
+  avatar           String?
+  refreshToken     String?
+  resetToken       String?
+  resetTokenExpiry DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  workspaces     WorkspaceMember[]
+  assignedIssues Issue[]        @relation("Assignee")
+  reportedIssues Issue[]        @relation("Reporter")
+  comments       Comment[]
+  attachments    Attachment[]
+  notifications  Notification[]
+  activityLogs   ActivityLog[]
+  watching       Watcher[]
+  timeLogs       TimeLog[]
+
+  @@map("users")
+}
+
+model Workspace {
+  id        String   @id @default(uuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  members  WorkspaceMember[]
+  projects Project[]
+
+  @@map("workspaces")
+}
+
+model WorkspaceMember {
+  id          String @id @default(uuid())
+  userId      String
+  workspaceId String
+  role        Role   @default(DEVELOPER)
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, workspaceId])
+  @@index([userId])
+  @@index([workspaceId])
+  @@map("workspace_members")
+}
+
+model Project {
+  id          String      @id @default(uuid())
+  name        String
+  key         String
+  type        ProjectType @default(SCRUM)
+  description String?
+  workspaceId String
+  createdAt   DateTime    @default(now())
+
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  issues      Issue[]
+  sprints     Sprint[]
+  statuses    Status[]
+  labels      Label[]
+  transitions WorkflowTransition[]
+
+  @@map("projects")
+}
+
+model Issue {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  type        IssueType @default(TASK)
+  priority    Priority  @default(MEDIUM)
+  number      Int
+  storyPoints Float?
+  estimate    Float?
+  timeSpent   Float?
+  statusId    String
+  projectId   String
+  assigneeId  String?
+  reporterId  String
+  sprintId    String?
+  epicId      String?
+  dueDate     DateTime?
+  order       Float     @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  status      Status       @relation(fields: [statusId], references: [id])
+  project     Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee    User?        @relation("Assignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  reporter    User         @relation("Reporter", fields: [reporterId], references: [id])
+  sprint      Sprint?      @relation(fields: [sprintId], references: [id], onDelete: SetNull)
+  epic        Issue?       @relation("Epic", fields: [epicId], references: [id], onDelete: SetNull)
+  subTasks    Issue[]      @relation("Epic")
+  comments    Comment[]
+  attachments Attachment[]
+  activities  ActivityLog[]
+  notifications Notification[]
+  outgoingLinks IssueLink[] @relation("SourceIssue")
+  incomingLinks IssueLink[] @relation("TargetIssue")
+  labels        IssueLabel[]
+  watchers      Watcher[]
+  timeLogs      TimeLog[]
+
+  @@index([projectId])
+  @@index([assigneeId])
+  @@index([reporterId])
+  @@index([statusId])
+  @@index([sprintId])
+  @@index([epicId])
+  @@index([projectId, statusId])
+  @@index([projectId, assigneeId])
+  @@map("issues")
+}
+
+model IssueLink {
+  id            String        @id @default(uuid())
+  type          IssueLinkType
+  sourceIssueId String
+  targetIssueId String
+  createdAt     DateTime      @default(now())
+
+  sourceIssue Issue @relation("SourceIssue", fields: [sourceIssueId], references: [id], onDelete: Cascade)
+  targetIssue Issue @relation("TargetIssue", fields: [targetIssueId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceIssueId, targetIssueId, type])
+  @@index([sourceIssueId])
+  @@index([targetIssueId])
+  @@map("issue_links")
+}
+
+model Label {
+  id        String @id @default(uuid())
+  name      String
+  color     String
+  projectId String
+
+  project Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  issues  IssueLabel[]
+
+  @@unique([name, projectId])
+  @@map("labels")
+}
+
+model IssueLabel {
+  id       String @id @default(uuid())
+  issueId  String
+  labelId  String
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  label Label @relation(fields: [labelId], references: [id], onDelete: Cascade)
+
+  @@unique([issueId, labelId])
+  @@map("issue_labels")
+}
+
+model Watcher {
+  id      String @id @default(uuid())
+  userId  String
+  issueId String
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, issueId])
+  @@map("watchers")
+}
+
+model TimeLog {
+  id          String   @id @default(uuid())
+  hours       Float
+  description String?
+  issueId     String
+  userId      String
+  loggedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+  @@index([userId])
+  @@map("time_logs")
+}
+
+model Sprint {
+  id        String       @id @default(uuid())
+  name      String
+  goal      String?
+  startDate DateTime?
+  endDate   DateTime?
+  status    SprintStatus @default(PLANNED)
+  projectId String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  issues  Issue[]
+
+  @@index([projectId])
+  @@map("sprints")
+}
+
+model Status {
+  id        String @id @default(uuid())
+  name      String
+  color     String
+  order     Int
+  projectId String
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  issues  Issue[]
+  transitionsFrom WorkflowTransition[] @relation("TransitionFrom")
+  transitionsTo   WorkflowTransition[] @relation("TransitionTo")
+
+  @@index([projectId])
+  @@map("statuses")
+}
+
+model WorkflowTransition {
+  id            String  @id @default(uuid())
+  fromStatusId  String
+  toStatusId    String
+  projectId     String
+
+  fromStatus    Status  @relation("TransitionFrom", fields: [fromStatusId], references: [id], onDelete: Cascade)
+  toStatus      Status  @relation("TransitionTo", fields: [toStatusId], references: [id], onDelete: Cascade)
+  project       Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([fromStatusId, toStatusId, projectId])
+  @@map("workflow_transitions")
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
+  issueId   String
+  authorId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  issue  Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  author User  @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+  @@index([authorId])
+  @@map("comments")
+}
+
+model Attachment {
+  id           String   @id @default(uuid())
+  filename     String
+  url          String
+  issueId      String
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  issue      Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  uploadedBy User  @relation(fields: [uploadedById], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+  @@map("attachments")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  type      NotificationType
+  message   String
+  userId    String
+  issueId   String?
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now())
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  issue Issue? @relation(fields: [issueId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([userId, read])
+  @@map("notifications")
+}
+
+model ActivityLog {
+  id        String   @id @default(uuid())
+  action    String
+  field     String?
+  oldValue  String?
+  newValue  String?
+  issueId   String
+  userId    String
+  createdAt DateTime @default(now())
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([issueId])
+  @@index([userId])
+  @@map("activity_logs")
+}

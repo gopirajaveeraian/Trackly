@@ -1,0 +1,58 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: trackly-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: trackly
+      POSTGRES_PASSWORD: trackly_dev_2026
+      POSTGRES_DB: trackly
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U trackly']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    container_name: trackly-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://trackly:trackly_dev_2026@postgres:5432/trackly
+      JWT_SECRET: trackly_jwt_secret_dev_2026
+      JWT_REFRESH_SECRET: trackly_jwt_refresh_secret_dev_2026
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      PORT: 5000
+      NODE_ENV: development
+      CLIENT_URL: http://localhost:3050
+    ports:
+      - '5000:5000'
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: trackly-web
+    restart: unless-stopped
+    depends_on:
+      - api
+    environment:
+      VITE_API_URL: http://localhost:5000/api
+      VITE_SOCKET_URL: http://localhost:5000
+    ports:
+      - '3050:3050'
+
+volumes:
+  postgres_data:
