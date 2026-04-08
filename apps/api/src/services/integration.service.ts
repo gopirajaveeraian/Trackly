@@ -136,14 +136,81 @@ export async function deleteIntegration(integrationId: string, userId: string) {
 
 /**
  * Tests the connection for an integration.
- * This is a stub that always returns success.
+ * Performs a real API call to verify credentials are valid.
  *
  * @param integrationId - The integration ID to test
  * @param userId - The requesting user's ID
  * @returns Connection test result
  */
 export async function testConnection(integrationId: string, userId: string) {
-  await verifyIntegrationAccess(integrationId, userId);
+  const integration = await prisma.integration.findUnique({
+    where: { id: integrationId },
+  });
 
-  return { success: true, message: 'Connection successful' };
+  if (!integration) {
+    throw new NotFoundError('Integration');
+  }
+
+  await verifyWorkspaceAccess(integration.workspaceId, userId);
+
+  const config = integration.config as Record<string, string>;
+
+  switch (integration.type) {
+    case 'GITHUB': {
+      const token = config.personalAccessToken;
+      if (!token) return { success: false, message: 'No personal access token configured' };
+      try {
+        const response = await fetch('https://api.github.com/user', {
+          headers: { Authorization: `Bearer ${token}`, 'User-Agent': 'Trackly' },
+        });
+        if (response.ok) {
+          const data = await response.json() as { login: string };
+          return { success: true, message: `Connected as ${data.login}` };
+        }
+        return { success: false, message: `GitHub API returned ${response.status}` };
+      } catch (err) {
+        return { success: false, message: 'Failed to connect to GitHub API' };
+      }
+    }
+    case 'SLACK': {
+      const webhookUrl = config.webhookUrl;
+      if (!webhookUrl) return { success: false, message: 'No webhook URL configured' };
+      try {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: 'Trackly integration test - connection successful!' }),
+        });
+        if (response.ok) {
+          return { success: true, message: 'Test message sent to Slack' };
+        }
+        return { success: false, message: `Slack webhook returned ${response.status}` };
+      } catch (err) {
+        return { success: false, message: 'Failed to connect to Slack webhook' };
+      }
+    }
+    case 'JIRA': {
+      const baseUrl = config.baseUrl;
+      const email = config.email;
+      const apiToken = config.apiToken;
+      if (!baseUrl || !email || !apiToken) {
+        return { success: false, message: 'Missing Jira credentials' };
+      }
+      try {
+        const auth = Buffer.from(`${email}:${apiToken}`).toString('base64');
+        const response = await fetch(`${baseUrl}/rest/api/3/myself`, {
+          headers: { Authorization: `Basic ${auth}`, 'Content-Type': 'application/json' },
+        });
+        if (response.ok) {
+          const data = await response.json() as { displayName: string };
+          return { success: true, message: `Connected as ${data.displayName}` };
+        }
+        return { success: false, message: `Jira API returned ${response.status}` };
+      } catch (err) {
+        return { success: false, message: 'Failed to connect to Jira API' };
+      }
+    }
+    default:
+      return { success: true, message: 'Connection successful' };
+  }
 }

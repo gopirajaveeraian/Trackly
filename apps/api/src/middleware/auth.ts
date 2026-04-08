@@ -4,6 +4,7 @@ import { env } from '../config/env';
 import { prisma } from '../config/db';
 import { UnauthorizedError, ForbiddenError } from './errorHandler';
 import { Role } from '@prisma/client';
+import { validateApiKey } from '../services/api-key.service';
 
 /**
  * Payload stored in JWT tokens.
@@ -40,7 +41,30 @@ export async function authenticate(
   try {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    if (!authHeader) {
+      throw new UnauthorizedError('Access token is required');
+    }
+
+    // Support API key authentication: "Bearer trk_..."
+    if (authHeader.startsWith('Bearer trk_')) {
+      const apiKey = authHeader.split(' ')[1];
+      const keyData = await validateApiKey(apiKey);
+
+      if (!keyData) {
+        throw new UnauthorizedError('Invalid or expired API key');
+      }
+
+      req.user = {
+        userId: keyData.userId,
+        email: keyData.email,
+      };
+
+      next();
+      return;
+    }
+
+    // Standard JWT authentication: "Bearer <jwt>"
+    if (!authHeader.startsWith('Bearer ')) {
       throw new UnauthorizedError('Access token is required');
     }
 

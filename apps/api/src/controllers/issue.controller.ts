@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { IssueType, Priority, IssueLinkType } from '@prisma/client';
 import * as issueService from '../services/issue.service';
 import { prisma } from '../config/db';
+import { dispatchWebhookEvent } from '../services/outbound-webhook.service';
 
 /**
  * GET /api/issues
@@ -56,6 +57,17 @@ export async function createIssue(
       io.to(`project:${issue.projectId}`).emit('issue:created', issue);
     }
 
+    // Dispatch outbound webhook
+    const project = await prisma.project.findUnique({
+      where: { id: issue.projectId },
+      select: { workspaceId: true, key: true },
+    });
+    if (project) {
+      dispatchWebhookEvent(project.workspaceId, 'issue.created', {
+        issue: { ...issue, key: `${project.key}-${issue.number}` },
+      }).catch(() => {});
+    }
+
     res.status(201).json({
       success: true,
       data: issue,
@@ -106,6 +118,18 @@ export async function updateIssue(
     const io = req.app.locals.io;
     if (io && issue.projectId) {
       io.to(`project:${issue.projectId}`).emit('issue:updated', issue);
+    }
+
+    // Dispatch outbound webhook
+    const proj = await prisma.project.findUnique({
+      where: { id: issue.projectId },
+      select: { workspaceId: true, key: true },
+    });
+    if (proj) {
+      const eventType = req.body.assigneeId !== undefined ? 'issue.assigned' : 'issue.updated';
+      dispatchWebhookEvent(proj.workspaceId, eventType, {
+        issue: { ...issue, key: `${proj.key}-${issue.number}` },
+      }).catch(() => {});
     }
 
     res.status(200).json({

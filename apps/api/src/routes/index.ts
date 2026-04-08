@@ -14,6 +14,9 @@ import capacityRoutes from './capacity.routes';
 import integrationRoutes from './integration.routes';
 import roadmapRoutes from './roadmap.routes';
 import jiraImportRoutes from './jira-import.routes';
+import webhookRoutes from './webhook.routes';
+import apiKeyRoutes from './api-key.routes';
+import outboundWebhookRoutes from './outbound-webhook.routes';
 
 const router = Router();
 
@@ -32,6 +35,9 @@ router.use('/capacities', capacityRoutes);
 router.use('/integrations', integrationRoutes);
 router.use('/roadmap', roadmapRoutes);
 router.use('/jira-import', jiraImportRoutes);
+router.use('/webhooks', webhookRoutes);
+router.use('/api-keys', apiKeyRoutes);
+router.use('/outbound-webhooks', outboundWebhookRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {

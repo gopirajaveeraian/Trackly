@@ -105,20 +105,28 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setToasts((prev) => [...prev.slice(-4), { ...options, id }]); // Keep max 5 toasts
   }, []);
 
+  const success = useCallback((title: string, description?: string) => {
+    addToast({ type: 'success', title, description });
+  }, [addToast]);
+
+  const error = useCallback((title: string, description?: string) => {
+    addToast({ type: 'error', title, description });
+  }, [addToast]);
+
+  const warning = useCallback((title: string, description?: string) => {
+    addToast({ type: 'warning', title, description });
+  }, [addToast]);
+
+  const info = useCallback((title: string, description?: string) => {
+    addToast({ type: 'info', title, description });
+  }, [addToast]);
+
   const contextValue: ToastContextType = {
     toast: addToast,
-    success: useCallback((title: string, description?: string) => {
-      addToast({ type: 'success', title, description });
-    }, [addToast]),
-    error: useCallback((title: string, description?: string) => {
-      addToast({ type: 'error', title, description });
-    }, [addToast]),
-    warning: useCallback((title: string, description?: string) => {
-      addToast({ type: 'warning', title, description });
-    }, [addToast]),
-    info: useCallback((title: string, description?: string) => {
-      addToast({ type: 'info', title, description });
-    }, [addToast]),
+    success,
+    error,
+    warning,
+    info,
   };
 
   return (

@@ -109,6 +109,14 @@ function route(method: string, segments: string[], body: Record<string, unknown>
         (i) => i.title.toLowerCase().includes(q) || (i.description ?? '').toLowerCase().includes(q)
       );
     }
+    case 'jira-import':
+      return {
+        projectId: 'demo-proj-1',
+        projectName: 'Demo Import',
+        projectKey: 'DEMO',
+        stats: { statuses: 4, sprints: 2, epics: 3, issues: 25, comments: 10, labels: 5, links: 8, usersMatched: 3, usersMissed: 1 },
+        warnings: ['Demo mode: no actual Jira connection was made.'],
+      };
     case 'reports':
       return handleReports(rest, params);
     default:

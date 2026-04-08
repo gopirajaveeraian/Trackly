@@ -97,6 +97,7 @@ model User {
   watching       Watcher[]
   timeLogs       TimeLog[]
   capacities     Capacity[]
+  apiKeys        ApiKey[]
 
   @@map("users")
 }
@@ -110,6 +111,8 @@ model Workspace {
   members      WorkspaceMember[]
   projects     Project[]
   integrations Integration[]
+  apiKeys      ApiKey[]
+  webhooks     OutboundWebhook[]
 
   @@map("workspaces")
 }
@@ -455,4 +458,42 @@ model Integration {
   @@unique([type, workspaceId])
   @@index([workspaceId])
   @@map("integrations")
+}
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  name        String
+  keyHash     String    @unique
+  keyPrefix   String
+  scopes      String[]  @default(["read"])
+  userId      String
+  workspaceId String
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  revoked     Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@index([userId])
+  @@map("api_keys")
+}
+
+model OutboundWebhook {
+  id          String   @id @default(uuid())
+  name        String
+  url         String
+  secret      String?
+  events      String[] @default(["issue.created", "issue.updated", "issue.deleted"])
+  enabled     Boolean  @default(true)
+  workspaceId String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@index([workspaceId])
+  @@map("outbound_webhooks")
 }
