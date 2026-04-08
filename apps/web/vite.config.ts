@@ -19,4 +19,18 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-ui': ['recharts', '@dnd-kit/core', '@dnd-kit/sortable'],
+          'vendor-editor': ['@tiptap/react', '@tiptap/starter-kit'],
+        },
+      },
+    },
+    sourcemap: false,
+    target: 'es2022',
+  },
 });

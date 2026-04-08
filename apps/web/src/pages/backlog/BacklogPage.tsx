@@ -5,6 +5,23 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  sortableKeyboardCoordinates,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   Plus,
   Search,
   Filter,
@@ -15,6 +32,7 @@ import {
   Layers,
   X,
   ChevronDown,
+  GripVertical,
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
@@ -30,7 +48,7 @@ import { useProjectSocket } from '@/hooks/useSocket';
 import { RichTextEditor } from '@/components/ui/RichTextEditor';
 import { cn } from '@/utils/cn';
 import { IssueType, Priority, SprintStatus } from '@/types';
-import type { Issue, CreateIssueRequest, ProjectStatus, Sprint } from '@/types';
+import type { Issue, CreateIssueRequest, ProjectStatus, Sprint, PaginatedResponse } from '@/types';
 import { formatDistanceToNow } from 'date-fns';
 
 const createIssueSchema = z.object({
@@ -150,6 +168,138 @@ function SprintCellDropdown({
   );
 }
 
+// --- Sortable Row Component ---
+
+interface SortableRowProps {
+  issue: Issue;
+  isSelected: boolean;
+  onToggleSelect: (id: string) => void;
+  onNavigate: (id: string) => void;
+  sprints: Sprint[];
+  sprintMap: Map<string, Sprint>;
+  onAssignSprint: (issueId: string, sprintId: string | null) => void;
+}
+
+function SortableRow({
+  issue,
+  isSelected,
+  onToggleSelect,
+  onNavigate,
+  sprints,
+  sprintMap,
+  onAssignSprint,
+}: SortableRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: issue.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <tr
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'table-row cursor-pointer',
+        isSelected && 'bg-primary-50/40',
+        isDragging && 'opacity-50 bg-gray-50'
+      )}
+      onClick={() => onNavigate(issue.id)}
+    >
+      <td className="px-2 py-3 w-8">
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="p-1 text-gray-300 hover:text-gray-500 cursor-grab active:cursor-grabbing"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      </td>
+      <td className="px-3 py-3">
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggleSelect(issue.id)}
+          onClick={(e) => e.stopPropagation()}
+          className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+        />
+      </td>
+      <td className="px-5 py-3">
+        {issueTypeIcons[issue.type]}
+      </td>
+      <td className="px-5 py-3">
+        <span className="text-sm font-medium text-gray-900">
+          {issue.title}
+        </span>
+      </td>
+      <td className="px-5 py-3">
+        <Badge
+          variant={
+            issue.status.name
+              .toLowerCase()
+              .includes('done')
+              ? 'success'
+              : issue.status.name
+                    .toLowerCase()
+                    .includes('progress')
+                ? 'primary'
+                : 'default'
+          }
+        >
+          {issue.status.name}
+        </Badge>
+      </td>
+      <td className="px-5 py-3">
+        <PriorityBadge priority={issue.priority} />
+      </td>
+      <td className="px-5 py-3">
+        <SprintCellDropdown
+          issue={issue}
+          sprints={sprints}
+          sprintMap={sprintMap}
+          onAssign={onAssignSprint}
+        />
+      </td>
+      <td className="px-5 py-3">
+        {issue.assignee ? (
+          <div className="flex items-center gap-2">
+            <Avatar
+              name={issue.assignee.name}
+              src={issue.assignee.avatar}
+              size="xs"
+            />
+            <span className="text-sm text-gray-600">
+              {issue.assignee.name}
+            </span>
+          </div>
+        ) : (
+          <span className="text-sm text-gray-400">
+            Unassigned
+          </span>
+        )}
+      </td>
+      <td className="px-5 py-3 text-xs text-gray-500">
+        {formatDistanceToNow(
+          new Date(issue.updatedAt),
+          {
+            addSuffix: true,
+          }
+        )}
+      </td>
+    </tr>
+  );
+}
+
 // --- Main Page Component ---
 
 export function BacklogPage() {
@@ -239,6 +389,73 @@ export function BacklogPage() {
     },
   });
 
+  // ─── Drag-to-Reorder ───────────────────────────────────────────────────────
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const reorderMutation = useMutation({
+    mutationFn: ({
+      id,
+      previousOrder,
+      nextOrder,
+    }: {
+      id: string;
+      previousOrder: number | null;
+      nextOrder: number | null;
+    }) => issueService.reorder(id, previousOrder, nextOrder),
+    onMutate: async ({ id, previousOrder, nextOrder }) => {
+      // Cancel in-flight refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: ['issues', { projectId }] });
+
+      const previousData = queryClient.getQueryData<PaginatedResponse<Issue>>([
+        'issues',
+        { projectId },
+      ]);
+
+      if (previousData) {
+        const newOrder =
+          previousOrder === null && nextOrder !== null
+            ? nextOrder - 1
+            : nextOrder === null && previousOrder !== null
+              ? previousOrder + 1
+              : previousOrder !== null && nextOrder !== null
+                ? (previousOrder + nextOrder) / 2
+                : 0;
+
+        const updatedData = previousData.data.map((issue) =>
+          issue.id === id ? { ...issue, order: newOrder } : issue
+        );
+        updatedData.sort((a, b) => a.order - b.order);
+
+        queryClient.setQueryData<PaginatedResponse<Issue>>(
+          ['issues', { projectId }],
+          { ...previousData, data: updatedData }
+        );
+      }
+
+      return { previousData };
+    },
+    onError: (_err, _vars, context) => {
+      // Roll back to previous data on error
+      if (context?.previousData) {
+        queryClient.setQueryData(
+          ['issues', { projectId }],
+          context.previousData
+        );
+      }
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['issues', { projectId }] });
+    },
+  });
+
   const {
     register,
     handleSubmit,
@@ -269,33 +486,70 @@ export function BacklogPage() {
     });
   }
 
-  // Filter issues
+  // Filter and sort issues by order
   const allIssues = issues?.data ?? [];
-  const filteredIssues = allIssues.filter((issue: Issue) => {
-    if (
-      searchQuery &&
-      !issue.title.toLowerCase().includes(searchQuery.toLowerCase())
-    ) {
-      return false;
-    }
-    if (filterPriority && issue.priority !== filterPriority) {
-      return false;
-    }
-    if (filterType && issue.type !== filterType) {
-      return false;
-    }
-    if (filterSprint === 'none' && issue.sprintId !== null) {
-      return false;
-    }
-    if (
-      filterSprint !== '' &&
-      filterSprint !== 'none' &&
-      issue.sprintId !== filterSprint
-    ) {
-      return false;
-    }
-    return true;
-  });
+  const filteredIssues = allIssues
+    .filter((issue: Issue) => {
+      if (
+        searchQuery &&
+        !issue.title.toLowerCase().includes(searchQuery.toLowerCase())
+      ) {
+        return false;
+      }
+      if (filterPriority && issue.priority !== filterPriority) {
+        return false;
+      }
+      if (filterType && issue.type !== filterType) {
+        return false;
+      }
+      if (filterSprint === 'none' && issue.sprintId !== null) {
+        return false;
+      }
+      if (
+        filterSprint !== '' &&
+        filterSprint !== 'none' &&
+        issue.sprintId !== filterSprint
+      ) {
+        return false;
+      }
+      return true;
+    })
+    .sort((a: Issue, b: Issue) => a.order - b.order);
+
+  const issueIds = useMemo(
+    () => filteredIssues.map((issue: Issue) => issue.id),
+    [filteredIssues]
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const oldIndex = filteredIssues.findIndex(
+        (issue: Issue) => issue.id === active.id
+      );
+      const newIndex = filteredIssues.findIndex(
+        (issue: Issue) => issue.id === over.id
+      );
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const reordered = arrayMove(filteredIssues, oldIndex, newIndex);
+      const previousOrder =
+        newIndex > 0 ? reordered[newIndex - 1].order : null;
+      const nextOrder =
+        newIndex < reordered.length - 1
+          ? reordered[newIndex + 1].order
+          : null;
+
+      reorderMutation.mutate({
+        id: active.id as string,
+        previousOrder,
+        nextOrder,
+      });
+    },
+    [filteredIssues, reorderMutation]
+  );
 
   const defaultStatusId =
     (statuses ?? []).length > 0 ? statuses![0].id : '';
@@ -522,118 +776,60 @@ export function BacklogPage() {
         </Card>
       ) : (
         <Card padding="none">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="table-header">
-                  <th className="px-5 py-3 w-10">
-                    <input
-                      type="checkbox"
-                      checked={allFilteredSelected}
-                      ref={(el) => {
-                        if (el) {
-                          el.indeterminate = someFilteredSelected;
-                        }
-                      }}
-                      onChange={handleSelectAll}
-                      className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                    />
-                  </th>
-                  <th className="px-5 py-3 w-8" />
-                  <th className="px-5 py-3">Issue</th>
-                  <th className="px-5 py-3">Status</th>
-                  <th className="px-5 py-3">Priority</th>
-                  <th className="px-5 py-3">Sprint</th>
-                  <th className="px-5 py-3">Assignee</th>
-                  <th className="px-5 py-3">Updated</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredIssues.map((issue: Issue) => (
-                  <tr
-                    key={issue.id}
-                    className={cn(
-                      'table-row cursor-pointer',
-                      selectedIssueIds.has(issue.id) && 'bg-primary-50/40'
-                    )}
-                    onClick={() => navigate(`/issues/${issue.id}`)}
-                  >
-                    <td className="px-5 py-3">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="table-header">
+                    <th className="px-2 py-3 w-8" />
+                    <th className="px-3 py-3 w-10">
                       <input
                         type="checkbox"
-                        checked={selectedIssueIds.has(issue.id)}
-                        onChange={() => handleToggleSelect(issue.id)}
-                        onClick={(e) => e.stopPropagation()}
+                        checked={allFilteredSelected}
+                        ref={(el) => {
+                          if (el) {
+                            el.indeterminate = someFilteredSelected;
+                          }
+                        }}
+                        onChange={handleSelectAll}
                         className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                       />
-                    </td>
-                    <td className="px-5 py-3">
-                      {issueTypeIcons[issue.type]}
-                    </td>
-                    <td className="px-5 py-3">
-                      <span className="text-sm font-medium text-gray-900">
-                        {issue.title}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3">
-                      <Badge
-                        variant={
-                          issue.status.name
-                            .toLowerCase()
-                            .includes('done')
-                            ? 'success'
-                            : issue.status.name
-                                  .toLowerCase()
-                                  .includes('progress')
-                              ? 'primary'
-                              : 'default'
-                        }
-                      >
-                        {issue.status.name}
-                      </Badge>
-                    </td>
-                    <td className="px-5 py-3">
-                      <PriorityBadge priority={issue.priority} />
-                    </td>
-                    <td className="px-5 py-3">
-                      <SprintCellDropdown
+                    </th>
+                    <th className="px-5 py-3 w-8" />
+                    <th className="px-5 py-3">Issue</th>
+                    <th className="px-5 py-3">Status</th>
+                    <th className="px-5 py-3">Priority</th>
+                    <th className="px-5 py-3">Sprint</th>
+                    <th className="px-5 py-3">Assignee</th>
+                    <th className="px-5 py-3">Updated</th>
+                  </tr>
+                </thead>
+                <SortableContext
+                  items={issueIds}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <tbody>
+                    {filteredIssues.map((issue: Issue) => (
+                      <SortableRow
+                        key={issue.id}
                         issue={issue}
+                        isSelected={selectedIssueIds.has(issue.id)}
+                        onToggleSelect={handleToggleSelect}
+                        onNavigate={(id) => navigate(`/issues/${id}`)}
                         sprints={sprints ?? []}
                         sprintMap={sprintMap}
-                        onAssign={handleAssignSprint}
+                        onAssignSprint={handleAssignSprint}
                       />
-                    </td>
-                    <td className="px-5 py-3">
-                      {issue.assignee ? (
-                        <div className="flex items-center gap-2">
-                          <Avatar
-                            name={issue.assignee.name}
-                            src={issue.assignee.avatar}
-                            size="xs"
-                          />
-                          <span className="text-sm text-gray-600">
-                            {issue.assignee.name}
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">
-                          Unassigned
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-xs text-gray-500">
-                      {formatDistanceToNow(
-                        new Date(issue.updatedAt),
-                        {
-                          addSuffix: true,
-                        }
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    ))}
+                  </tbody>
+                </SortableContext>
+              </table>
+            </div>
+          </DndContext>
         </Card>
       )}
 

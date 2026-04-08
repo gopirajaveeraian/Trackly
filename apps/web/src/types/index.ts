@@ -48,6 +48,17 @@ export type {
   PaginatedResponse,
   ApiError,
   ApiResponse,
+  // Release
+  Release,
+  CreateReleaseRequest,
+  UpdateReleaseRequest,
+  // Capacity
+  Capacity,
+  UpsertCapacityRequest,
+  // Integration
+  Integration,
+  CreateIntegrationRequest,
+  UpdateIntegrationRequest,
 } from '@trackly/shared-types';
 
 export {
@@ -58,6 +69,8 @@ export {
   SprintStatus,
   NotificationType,
   IssueLinkType,
+  ReleaseStatus,
+  IntegrationType,
 } from '@trackly/shared-types';
 
 // Frontend-only types

@@ -88,3 +88,47 @@ export async function getStatusSummary(
     next(error);
   }
 }
+
+/**
+ * GET /api/reports/sprint-health?sprintId=
+ * Returns sprint health data including burn-up, scope changes, and health score.
+ */
+export async function sprintHealth(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const sprintId = req.query.sprintId as string;
+    const data = await reportService.getSprintHealth(sprintId, req.user!.userId);
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/reports/burnup?sprintId=
+ * Returns burn-up chart data for a sprint (total scope vs completed).
+ */
+export async function burnup(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const sprintId = req.query.sprintId as string;
+    const data = await reportService.getBurnup(sprintId, req.user!.userId);
+
+    res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    next(error);
+  }
+}

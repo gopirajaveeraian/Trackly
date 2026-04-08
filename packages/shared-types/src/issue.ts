@@ -79,6 +79,7 @@ export interface Issue {
   links?: IssueLink[];
   watchers?: Watcher[];
   timeLogs?: TimeLog[];
+  order: number;
   dueDate: string | null;
   createdAt: string;
   updatedAt: string;

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import * as authController from '../controllers/auth.controller';
 import { validate } from '../middleware/validate';
 import { authenticate } from '../middleware/auth';
-import { authLimiter } from '../middleware/rateLimiter';
+import { authLimiter, loginLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
 
@@ -50,7 +50,7 @@ const resetPasswordSchema = z.object({
 // ─── Routes ─────────────────────────────────────────────────────────────────
 
 router.post('/register', authLimiter, validate(registerSchema), authController.register);
-router.post('/login', authLimiter, validate(loginSchema), authController.login);
+router.post('/login', loginLimiter, validate(loginSchema), authController.login);
 router.post('/logout', authenticate, authController.logout);
 router.post('/refresh', validate(refreshSchema), authController.refresh);
 router.post('/forgot-password', authLimiter, validate(forgotPasswordSchema), authController.forgotPassword);

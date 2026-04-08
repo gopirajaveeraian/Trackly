@@ -13,6 +13,13 @@ import {
   ChevronLeft,
   ChevronRight,
   LogOut,
+  Package,
+  Map,
+  Users,
+  HeartPulse,
+  Link2,
+  Plug,
+  Download,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
 import { Avatar } from '@/components/ui/Avatar';
@@ -47,6 +54,16 @@ const mainNavItems: SidebarNavItem[] = [
     href: '/settings',
     icon: <Settings className="h-5 w-5" />,
   },
+  {
+    label: 'Integrations',
+    href: '/integrations',
+    icon: <Plug className="h-5 w-5" />,
+  },
+  {
+    label: 'Jira Import',
+    href: '/jira-import',
+    icon: <Download className="h-5 w-5" />,
+  },
 ];
 
 function getProjectNavItems(projectId: string): SidebarNavItem[] {
@@ -76,6 +93,31 @@ function getProjectNavItems(projectId: string): SidebarNavItem[] {
       href: `/reports/${projectId}`,
       icon: <BarChart3 className="h-5 w-5" />,
     },
+    {
+      label: 'Releases',
+      href: `/releases/${projectId}`,
+      icon: <Package className="h-5 w-5" />,
+    },
+    {
+      label: 'Roadmap',
+      href: `/roadmap/${projectId}`,
+      icon: <Map className="h-5 w-5" />,
+    },
+    {
+      label: 'Capacity',
+      href: `/capacity/${projectId}`,
+      icon: <Users className="h-5 w-5" />,
+    },
+    {
+      label: 'Sprint Health',
+      href: `/sprint-health/${projectId}`,
+      icon: <HeartPulse className="h-5 w-5" />,
+    },
+    {
+      label: 'Dependencies',
+      href: `/dependencies/${projectId}`,
+      icon: <Link2 className="h-5 w-5" />,
+    },
   ];
 }
 
@@ -95,6 +137,11 @@ export function Sidebar() {
     location.pathname.includes('/sprints/') ||
     location.pathname.includes('/epics/') ||
     location.pathname.includes('/reports/') ||
+    location.pathname.includes('/releases/') ||
+    location.pathname.includes('/roadmap/') ||
+    location.pathname.includes('/capacity/') ||
+    location.pathname.includes('/sprint-health/') ||
+    location.pathname.includes('/dependencies/') ||
     (location.pathname.includes('/projects/') && projectId);
 
   return (
@@ -104,6 +151,8 @@ export function Sidebar() {
         'bg-surface border-th-border',
         collapsed ? 'w-[68px]' : 'w-[260px]'
       )}
+      role="navigation"
+      aria-label="Main navigation"
     >
       {/* Logo */}
       <div className="flex items-center justify-between px-4 h-14 border-b border-th-border-subtle">
@@ -127,7 +176,7 @@ export function Sidebar() {
       <WorkspaceSelector collapsed={collapsed} />
 
       {/* Main Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
+      <nav className="flex-1 overflow-y-auto py-4 px-3" aria-label="Main menu">
         <div className="space-y-1">
           {mainNavItems.map((item) => (
             <NavLink
@@ -227,6 +276,7 @@ export function Sidebar() {
               onClick={() => logout()}
               className="p-1.5 rounded-md text-gray-400 hover:text-danger-600 hover:bg-danger-50 transition-colors"
               title="Sign out"
+              aria-label="Sign out"
             >
               <LogOut className="h-4 w-4" />
             </button>

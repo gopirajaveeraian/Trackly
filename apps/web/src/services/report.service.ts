@@ -44,6 +44,44 @@ export interface StatusSummaryEntry {
   storyPoints: number;
 }
 
+export interface BurnupDataPoint {
+  date: string;
+  total: number;
+  completed: number;
+}
+
+export interface SprintHealthData {
+  sprint: {
+    id: string;
+    name: string;
+    startDate: string | null;
+    endDate: string | null;
+    status: string;
+  };
+  burnupData: BurnupDataPoint[];
+  healthScore: number;
+  scopeChanges: number;
+  totalPoints: number;
+  completedPoints: number;
+  completedIssues: number;
+  totalIssues: number;
+  timeElapsedPercent: number;
+  progressPercent: number;
+  completionForecast: string | null;
+}
+
+export interface BurnupResponse {
+  sprint: {
+    id: string;
+    name: string;
+    startDate: string | null;
+    endDate: string | null;
+    status: string;
+  };
+  data: BurnupDataPoint[];
+  totalPoints: number;
+}
+
 // ─── Report Service ────────────────────────────────────────────────────────
 
 export const reportService = {
@@ -75,6 +113,22 @@ export const reportService = {
     const response = await api.get<ApiResponse<StatusSummaryEntry[]>>(
       '/reports/status-summary',
       { params: { projectId } }
+    );
+    return response.data.data;
+  },
+
+  async getSprintHealth(sprintId: string): Promise<SprintHealthData> {
+    const response = await api.get<ApiResponse<SprintHealthData>>(
+      '/reports/sprint-health',
+      { params: { sprintId } }
+    );
+    return response.data.data;
+  },
+
+  async getBurnup(sprintId: string): Promise<BurnupResponse> {
+    const response = await api.get<ApiResponse<BurnupResponse>>(
+      '/reports/burnup',
+      { params: { sprintId } }
     );
     return response.data.data;
   },

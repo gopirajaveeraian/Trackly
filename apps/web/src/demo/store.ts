@@ -191,6 +191,7 @@ export class DemoStore {
       links: [],
       watchers: [],
       timeLogs: [],
+      order: this.issues.filter((i) => i.projectId === data.projectId).length + 1,
       dueDate: data.dueDate ?? null,
       createdAt: now(),
       updatedAt: now(),

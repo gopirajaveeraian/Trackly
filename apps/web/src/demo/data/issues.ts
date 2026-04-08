@@ -16,6 +16,7 @@ const trkIssues: Issue[] = [
     statusId: 'st-trk-4', status: s('st-trk-4'), projectId: PROJECT_TRK_ID, project: { id: PROJECT_TRK_ID, name: 'Trackly App', key: 'TRK' },
     assigneeId: 'usr-001', assignee: u('usr-001'), reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null, subTasks: [], labels: [], links: [], watchers: [], timeLogs: [],
+    order: 1,
     dueDate: null, createdAt: '2025-10-02T09:00:00.000Z', updatedAt: '2026-02-28T16:00:00.000Z',
   },
   {
@@ -23,6 +24,7 @@ const trkIssues: Issue[] = [
     statusId: 'st-trk-2', status: s('st-trk-2'), projectId: PROJECT_TRK_ID, project: { id: PROJECT_TRK_ID, name: 'Trackly App', key: 'TRK' },
     assigneeId: 'usr-003', assignee: u('usr-003'), reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null, subTasks: [], labels: [], links: [], watchers: [], timeLogs: [],
+    order: 2,
     dueDate: '2026-03-28T00:00:00.000Z', createdAt: '2025-10-02T09:30:00.000Z', updatedAt: '2026-03-10T14:00:00.000Z',
   },
 
@@ -34,6 +36,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-001', sprint: { id: 'spr-001', name: 'Sprint 1 — Foundation', status: 'COMPLETED' },
     epicId: 'iss-001', epic: { id: 'iss-001', title: 'User Authentication & Authorization', number: 1 },
     subTasks: [], labels: [{ id: 'lbl-002', name: 'backend', color: '#10B981', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 3,
     dueDate: null, createdAt: '2026-02-17T09:00:00.000Z', updatedAt: '2026-02-20T17:00:00.000Z',
   },
   {
@@ -43,6 +46,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-001', sprint: { id: 'spr-001', name: 'Sprint 1 — Foundation', status: 'COMPLETED' },
     epicId: 'iss-001', epic: { id: 'iss-001', title: 'User Authentication & Authorization', number: 1 },
     subTasks: [], labels: [{ id: 'lbl-001', name: 'frontend', color: '#3B82F6', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 4,
     dueDate: null, createdAt: '2026-02-17T10:00:00.000Z', updatedAt: '2026-02-21T16:00:00.000Z',
   },
   {
@@ -52,6 +56,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-001', sprint: { id: 'spr-001', name: 'Sprint 1 — Foundation', status: 'COMPLETED' },
     epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-002', name: 'backend', color: '#10B981', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 5,
     dueDate: null, createdAt: '2026-02-17T08:00:00.000Z', updatedAt: '2026-02-18T15:00:00.000Z',
   },
   {
@@ -61,6 +66,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-001', sprint: { id: 'spr-001', name: 'Sprint 1 — Foundation', status: 'COMPLETED' },
     epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-001', name: 'frontend', color: '#3B82F6', projectId: PROJECT_TRK_ID }, { id: 'lbl-004', name: 'ux', color: '#8B5CF6', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 6,
     dueDate: null, createdAt: '2026-02-18T09:00:00.000Z', updatedAt: '2026-02-25T17:00:00.000Z',
   },
   {
@@ -70,6 +76,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-001', sprint: { id: 'spr-001', name: 'Sprint 1 — Foundation', status: 'COMPLETED' },
     epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-002', name: 'backend', color: '#10B981', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 7,
     dueDate: null, createdAt: '2026-02-19T09:00:00.000Z', updatedAt: '2026-02-26T16:00:00.000Z',
   },
   {
@@ -79,6 +86,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-001', sprint: { id: 'spr-001', name: 'Sprint 1 — Foundation', status: 'COMPLETED' },
     epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-002', name: 'backend', color: '#10B981', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 8,
     dueDate: null, createdAt: '2026-02-20T09:00:00.000Z', updatedAt: '2026-02-27T12:00:00.000Z',
   },
 
@@ -90,6 +98,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-002', sprint: { id: 'spr-002', name: 'Sprint 2 — Core Features', status: 'ACTIVE' },
     epicId: 'iss-002', epic: { id: 'iss-002', title: 'Board View & Drag-and-Drop', number: 2 },
     subTasks: [], labels: [{ id: 'lbl-001', name: 'frontend', color: '#3B82F6', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 9,
     dueDate: '2026-03-12T00:00:00.000Z', createdAt: '2026-03-03T09:00:00.000Z', updatedAt: '2026-03-11T16:00:00.000Z',
   },
   {
@@ -99,6 +108,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-002', sprint: { id: 'spr-002', name: 'Sprint 2 — Core Features', status: 'ACTIVE' },
     epicId: 'iss-002', epic: { id: 'iss-002', title: 'Board View & Drag-and-Drop', number: 2 },
     subTasks: [], labels: [{ id: 'lbl-001', name: 'frontend', color: '#3B82F6', projectId: PROJECT_TRK_ID }, { id: 'lbl-004', name: 'ux', color: '#8B5CF6', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 10,
     dueDate: '2026-03-14T00:00:00.000Z', createdAt: '2026-03-03T10:00:00.000Z', updatedAt: '2026-03-13T10:00:00.000Z',
   },
   {
@@ -108,6 +118,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-002', sprint: { id: 'spr-002', name: 'Sprint 2 — Core Features', status: 'ACTIVE' },
     epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-002', name: 'backend', color: '#10B981', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 11,
     dueDate: null, createdAt: '2026-03-03T11:00:00.000Z', updatedAt: '2026-03-10T16:00:00.000Z',
   },
   {
@@ -117,6 +128,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-002', sprint: { id: 'spr-002', name: 'Sprint 2 — Core Features', status: 'ACTIVE' },
     epicId: 'iss-001', epic: { id: 'iss-001', title: 'User Authentication & Authorization', number: 1 },
     subTasks: [], labels: [{ id: 'lbl-001', name: 'frontend', color: '#3B82F6', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 12,
     dueDate: null, createdAt: '2026-03-05T14:00:00.000Z', updatedAt: '2026-03-05T14:00:00.000Z',
   },
   {
@@ -126,6 +138,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-002', sprint: { id: 'spr-002', name: 'Sprint 2 — Core Features', status: 'ACTIVE' },
     epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-001', name: 'frontend', color: '#3B82F6', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 13,
     dueDate: '2026-03-14T00:00:00.000Z', createdAt: '2026-03-04T09:00:00.000Z', updatedAt: '2026-03-12T11:00:00.000Z',
   },
   {
@@ -135,6 +148,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-002', sprint: { id: 'spr-002', name: 'Sprint 2 — Core Features', status: 'ACTIVE' },
     epicId: 'iss-002', epic: { id: 'iss-002', title: 'Board View & Drag-and-Drop', number: 2 },
     subTasks: [], labels: [{ id: 'lbl-001', name: 'frontend', color: '#3B82F6', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 14,
     dueDate: null, createdAt: '2026-03-04T10:00:00.000Z', updatedAt: '2026-03-04T10:00:00.000Z',
   },
   {
@@ -144,6 +158,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-002', sprint: { id: 'spr-002', name: 'Sprint 2 — Core Features', status: 'ACTIVE' },
     epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-002', name: 'backend', color: '#10B981', projectId: PROJECT_TRK_ID }, { id: 'lbl-005', name: 'performance', color: '#F59E0B', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 15,
     dueDate: '2026-03-10T00:00:00.000Z', createdAt: '2026-03-06T15:00:00.000Z', updatedAt: '2026-03-11T09:00:00.000Z',
   },
   {
@@ -153,6 +168,7 @@ const trkIssues: Issue[] = [
     sprintId: 'spr-002', sprint: { id: 'spr-002', name: 'Sprint 2 — Core Features', status: 'ACTIVE' },
     epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-001', name: 'frontend', color: '#3B82F6', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 16,
     dueDate: null, createdAt: '2026-03-05T09:00:00.000Z', updatedAt: '2026-03-05T09:00:00.000Z',
   },
 
@@ -163,6 +179,7 @@ const trkIssues: Issue[] = [
     assigneeId: null, assignee: null, reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-001', name: 'frontend', color: '#3B82F6', projectId: PROJECT_TRK_ID }, { id: 'lbl-002', name: 'backend', color: '#10B981', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 17,
     dueDate: null, createdAt: '2026-03-01T09:00:00.000Z', updatedAt: '2026-03-01T09:00:00.000Z',
   },
   {
@@ -171,6 +188,7 @@ const trkIssues: Issue[] = [
     assigneeId: null, assignee: null, reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-001', name: 'frontend', color: '#3B82F6', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 18,
     dueDate: null, createdAt: '2026-03-01T10:00:00.000Z', updatedAt: '2026-03-01T10:00:00.000Z',
   },
   {
@@ -179,6 +197,7 @@ const trkIssues: Issue[] = [
     assigneeId: null, assignee: null, reporterId: 'usr-001', reporter: u('usr-001'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-001', name: 'frontend', color: '#3B82F6', projectId: PROJECT_TRK_ID }, { id: 'lbl-004', name: 'ux', color: '#8B5CF6', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 19,
     dueDate: null, createdAt: '2026-03-02T09:00:00.000Z', updatedAt: '2026-03-02T09:00:00.000Z',
   },
   {
@@ -187,6 +206,7 @@ const trkIssues: Issue[] = [
     assigneeId: null, assignee: null, reporterId: 'usr-001', reporter: u('usr-001'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-002', name: 'backend', color: '#10B981', projectId: PROJECT_TRK_ID }, { id: 'lbl-006', name: 'tech-debt', color: '#6B7280', projectId: PROJECT_TRK_ID }], links: [], watchers: [], timeLogs: [],
+    order: 20,
     dueDate: null, createdAt: '2026-03-02T11:00:00.000Z', updatedAt: '2026-03-02T11:00:00.000Z',
   },
 ];
@@ -200,6 +220,7 @@ const dsIssues: Issue[] = [
     assigneeId: 'usr-004', assignee: u('usr-004'), reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-101', name: 'component', color: '#3B82F6', projectId: PROJECT_DS_ID }], links: [], watchers: [], timeLogs: [],
+    order: 21,
     dueDate: null, createdAt: '2025-10-15T09:00:00.000Z', updatedAt: '2025-11-01T16:00:00.000Z',
   },
   {
@@ -208,6 +229,7 @@ const dsIssues: Issue[] = [
     assigneeId: 'usr-002', assignee: u('usr-002'), reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-102', name: 'tokens', color: '#8B5CF6', projectId: PROJECT_DS_ID }], links: [], watchers: [], timeLogs: [],
+    order: 22,
     dueDate: null, createdAt: '2025-10-15T10:00:00.000Z', updatedAt: '2025-10-28T15:00:00.000Z',
   },
   {
@@ -216,6 +238,7 @@ const dsIssues: Issue[] = [
     assigneeId: 'usr-004', assignee: u('usr-004'), reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-101', name: 'component', color: '#3B82F6', projectId: PROJECT_DS_ID }, { id: 'lbl-104', name: 'a11y', color: '#10B981', projectId: PROJECT_DS_ID }], links: [], watchers: [], timeLogs: [],
+    order: 23,
     dueDate: null, createdAt: '2025-11-05T09:00:00.000Z', updatedAt: '2026-03-12T14:00:00.000Z',
   },
   {
@@ -224,6 +247,7 @@ const dsIssues: Issue[] = [
     assigneeId: 'usr-003', assignee: u('usr-003'), reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-101', name: 'component', color: '#3B82F6', projectId: PROJECT_DS_ID }], links: [], watchers: [], timeLogs: [],
+    order: 24,
     dueDate: '2026-03-20T00:00:00.000Z', createdAt: '2025-11-10T09:00:00.000Z', updatedAt: '2026-03-13T11:00:00.000Z',
   },
   {
@@ -232,6 +256,7 @@ const dsIssues: Issue[] = [
     assigneeId: 'usr-002', assignee: u('usr-002'), reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-102', name: 'tokens', color: '#8B5CF6', projectId: PROJECT_DS_ID }], links: [], watchers: [], timeLogs: [],
+    order: 25,
     dueDate: null, createdAt: '2025-11-12T09:00:00.000Z', updatedAt: '2026-03-10T10:00:00.000Z',
   },
   {
@@ -240,6 +265,7 @@ const dsIssues: Issue[] = [
     assigneeId: null, assignee: null, reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-101', name: 'component', color: '#3B82F6', projectId: PROJECT_DS_ID }], links: [], watchers: [], timeLogs: [],
+    order: 26,
     dueDate: null, createdAt: '2025-11-15T09:00:00.000Z', updatedAt: '2025-11-15T09:00:00.000Z',
   },
   {
@@ -248,6 +274,7 @@ const dsIssues: Issue[] = [
     assigneeId: null, assignee: null, reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-103', name: 'docs', color: '#F59E0B', projectId: PROJECT_DS_ID }], links: [], watchers: [], timeLogs: [],
+    order: 27,
     dueDate: null, createdAt: '2025-11-20T09:00:00.000Z', updatedAt: '2025-11-20T09:00:00.000Z',
   },
   {
@@ -256,6 +283,7 @@ const dsIssues: Issue[] = [
     assigneeId: null, assignee: null, reporterId: 'usr-004', reporter: u('usr-004'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-104', name: 'a11y', color: '#10B981', projectId: PROJECT_DS_ID }], links: [], watchers: [], timeLogs: [],
+    order: 28,
     dueDate: null, createdAt: '2025-12-01T09:00:00.000Z', updatedAt: '2025-12-01T09:00:00.000Z',
   },
   {
@@ -264,6 +292,7 @@ const dsIssues: Issue[] = [
     assigneeId: 'usr-003', assignee: u('usr-003'), reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-101', name: 'component', color: '#3B82F6', projectId: PROJECT_DS_ID }], links: [], watchers: [], timeLogs: [],
+    order: 29,
     dueDate: null, createdAt: '2026-01-10T09:00:00.000Z', updatedAt: '2026-03-14T10:00:00.000Z',
   },
   {
@@ -272,6 +301,7 @@ const dsIssues: Issue[] = [
     assigneeId: null, assignee: null, reporterId: 'usr-002', reporter: u('usr-002'),
     sprintId: null, sprint: null, epicId: null, epic: null,
     subTasks: [], labels: [{ id: 'lbl-102', name: 'tokens', color: '#8B5CF6', projectId: PROJECT_DS_ID }, { id: 'lbl-101', name: 'component', color: '#3B82F6', projectId: PROJECT_DS_ID }], links: [], watchers: [], timeLogs: [],
+    order: 30,
     dueDate: null, createdAt: '2026-02-01T09:00:00.000Z', updatedAt: '2026-02-01T09:00:00.000Z',
   },
 ];

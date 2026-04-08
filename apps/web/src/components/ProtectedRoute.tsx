@@ -12,13 +12,17 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const location = useLocation();
 
   useEffect(() => {
-    if (user?.id) {
+    if (isAuthenticated && user?.id) {
       connectSocket(user.id);
     }
+
+    // Only disconnect on full unmount (logout), not on route changes
     return () => {
-      disconnectSocket();
+      if (!useAuthStore.getState().isAuthenticated) {
+        disconnectSocket();
+      }
     };
-  }, [user?.id]);
+  }, [isAuthenticated, user?.id]);
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;

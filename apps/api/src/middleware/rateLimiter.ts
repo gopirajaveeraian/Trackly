@@ -29,3 +29,19 @@ export const authLimiter = rateLimit({
     statusCode: 429,
   },
 });
+
+/**
+ * Strict login limiter - 5 failed attempts per 30 minutes per IP.
+ * Prevents brute-force password attacks.
+ */
+export const loginLimiter = rateLimit({
+  windowMs: 30 * 60 * 1000,
+  limit: 5,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many login attempts, please try again after 30 minutes',
+    statusCode: 429,
+  },
+});

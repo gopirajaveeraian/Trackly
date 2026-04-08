@@ -57,6 +57,22 @@ enum IssueLinkType {
   DUPLICATES
 }
 
+enum ReleaseStatus {
+  PLANNING
+  IN_PROGRESS
+  RELEASED
+  ARCHIVED
+}
+
+enum IntegrationType {
+  GITHUB
+  CONFLUENCE
+  SLACK
+  JIRA
+  BITBUCKET
+  GITLAB
+}
+
 // ─── Models ─────────────────────────────────────────────────────────────────
 
 model User {
@@ -80,6 +96,7 @@ model User {
   activityLogs   ActivityLog[]
   watching       Watcher[]
   timeLogs       TimeLog[]
+  capacities     Capacity[]
 
   @@map("users")
 }
@@ -90,8 +107,9 @@ model Workspace {
   slug      String   @unique
   createdAt DateTime @default(now())
 
-  members  WorkspaceMember[]
-  projects Project[]
+  members      WorkspaceMember[]
+  projects     Project[]
+  integrations Integration[]
 
   @@map("workspaces")
 }
@@ -126,7 +144,9 @@ model Project {
   statuses    Status[]
   labels      Label[]
   transitions WorkflowTransition[]
+  releases    Release[]
 
+  @@index([workspaceId])
   @@map("projects")
 }
 
@@ -146,6 +166,7 @@ model Issue {
   reporterId  String
   sprintId    String?
   epicId      String?
+  releaseId   String?
   dueDate     DateTime?
   order       Float     @default(0)
   createdAt   DateTime  @default(now())
@@ -157,6 +178,7 @@ model Issue {
   reporter    User         @relation("Reporter", fields: [reporterId], references: [id])
   sprint      Sprint?      @relation(fields: [sprintId], references: [id], onDelete: SetNull)
   epic        Issue?       @relation("Epic", fields: [epicId], references: [id], onDelete: SetNull)
+  release     Release?     @relation(fields: [releaseId], references: [id], onDelete: SetNull)
   subTasks    Issue[]      @relation("Epic")
   comments    Comment[]
   attachments Attachment[]
@@ -176,6 +198,7 @@ model Issue {
   @@index([epicId])
   @@index([projectId, statusId])
   @@index([projectId, assigneeId])
+  @@index([releaseId])
   @@map("issues")
 }
 
@@ -258,10 +281,13 @@ model Sprint {
   status    SprintStatus @default(PLANNED)
   projectId String
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  issues  Issue[]
+  project    Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  issues     Issue[]
+  snapshots  SprintSnapshot[]
+  capacities Capacity[]
 
   @@index([projectId])
+  @@index([projectId, status])
   @@map("sprints")
 }
 
@@ -340,6 +366,7 @@ model Notification {
 
   @@index([userId])
   @@index([userId, read])
+  @@index([userId, createdAt])
   @@map("notifications")
 }
 
@@ -358,5 +385,74 @@ model ActivityLog {
 
   @@index([issueId])
   @@index([userId])
+  @@index([issueId, createdAt])
   @@map("activity_logs")
+}
+
+model Release {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  status      ReleaseStatus @default(PLANNING)
+  startDate   DateTime?
+  releaseDate DateTime?
+  projectId   String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  project Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  issues  Issue[]
+
+  @@index([projectId])
+  @@index([projectId, status])
+  @@map("releases")
+}
+
+model SprintSnapshot {
+  id              String   @id @default(uuid())
+  sprintId        String
+  totalPoints     Float
+  completedPoints Float
+  totalIssues     Int
+  completedIssues Int
+  scopeChanges    Int      @default(0)
+  snapshotDate    DateTime @default(now())
+
+  sprint Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+
+  @@index([sprintId])
+  @@index([sprintId, snapshotDate])
+  @@map("sprint_snapshots")
+}
+
+model Capacity {
+  id             String @id @default(uuid())
+  userId         String
+  sprintId       String
+  availableHours Float  @default(40)
+  allocatedHours Float  @default(0)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sprint Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sprintId])
+  @@index([sprintId])
+  @@map("capacities")
+}
+
+model Integration {
+  id          String          @id @default(uuid())
+  type        IntegrationType
+  name        String
+  config      Json            @default("{}")
+  enabled     Boolean         @default(true)
+  workspaceId String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+
+  @@unique([type, workspaceId])
+  @@index([workspaceId])
+  @@map("integrations")
 }

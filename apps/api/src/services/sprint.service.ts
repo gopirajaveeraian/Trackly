@@ -273,7 +273,10 @@ export async function completeSprint(sprintId: string, userId: string) {
     // Mark sprint as completed
     const completedSprint = await tx.sprint.update({
       where: { id: sprintId },
-      data: { status: SprintStatus.COMPLETED },
+      data: {
+        status: SprintStatus.COMPLETED,
+        endDate: sprint.endDate ?? new Date(),
+      },
     });
 
     return {

@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import cookieParser from 'cookie-parser';
+import crypto from 'crypto';
 import path from 'path';
 import http from 'http';
 import jwt from 'jsonwebtoken';
@@ -18,6 +19,12 @@ import { sanitizeBody } from './middleware/sanitize';
 
 const app = express();
 const server = http.createServer(app);
+
+// Request ID for tracing
+app.use((req, _res, next) => {
+  req.headers['x-request-id'] = req.headers['x-request-id'] || crypto.randomUUID();
+  next();
+});
 
 // ─── Socket.io Setup ────────────────────────────────────────────────────────
 
@@ -81,7 +88,18 @@ app.locals.io = io;
 
 // ─── Middleware ──────────────────────────────────────────────────────────────
 
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      imgSrc: ["'self'", "data:", "blob:"],
+      connectSrc: ["'self'", env.CLIENT_URL],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
 app.use(
   cors({
     origin: env.CLIENT_URL,
@@ -94,6 +112,21 @@ app.use(morgan(env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Prevent HTTP parameter pollution
+app.use((req, _res, next) => {
+  if (req.query) {
+    for (const key of Object.keys(req.query)) {
+      if (Array.isArray(req.query[key])) {
+        req.query[key] = (req.query[key] as string[])[
+          (req.query[key] as string[]).length - 1
+        ];
+      }
+    }
+  }
+  next();
+});
+
 app.use(globalLimiter);
 app.use(sanitizeBody);
 
@@ -154,6 +187,17 @@ process.on('SIGTERM', async () => {
   server.close(() => {
     process.exit(0);
   });
+});
+
+// Unhandled rejection handler
+process.on('unhandledRejection', (reason: unknown) => {
+  console.error('[Server] Unhandled Rejection:', reason);
+});
+
+// Uncaught exception handler
+process.on('uncaughtException', (error: Error) => {
+  console.error('[Server] Uncaught Exception:', error);
+  process.exit(1);
 });
 
 start();

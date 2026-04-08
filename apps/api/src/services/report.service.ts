@@ -1,5 +1,5 @@
 import { prisma } from '../config/db';
-import { ForbiddenError, NotFoundError } from '../middleware/errorHandler';
+import { AppError, ForbiddenError, NotFoundError } from '../middleware/errorHandler';
 
 /** Status names considered as "done" (case-insensitive). */
 const DONE_STATUS_NAMES = ['done', 'completed', 'closed'];
@@ -326,4 +326,273 @@ export async function getStatusSummary(projectId: string, userId: string) {
       0,
     ),
   }));
+}
+
+/**
+ * Generates a burn-up chart dataset for the given sprint.
+ *
+ * Unlike burndown, burn-up tracks two lines: total scope and completed work.
+ * This makes scope changes visible. For each day, computes total story points
+ * (scope) and completed story points.
+ *
+ * @param sprintId - The sprint to generate the burn-up for
+ * @param userId - The requesting user's ID
+ * @returns Sprint metadata, daily burn-up data, and total story points
+ * @throws NotFoundError if the sprint does not exist
+ */
+export async function getBurnup(sprintId: string, userId: string) {
+  const sprint = await prisma.sprint.findUnique({
+    where: { id: sprintId },
+  });
+
+  if (!sprint) {
+    throw new NotFoundError('Sprint');
+  }
+
+  await verifyProjectAccess(sprint.projectId, userId);
+
+  if (!sprint.startDate) {
+    return {
+      sprint: {
+        id: sprint.id,
+        name: sprint.name,
+        startDate: sprint.startDate,
+        endDate: sprint.endDate,
+        status: sprint.status,
+      },
+      data: [],
+      totalPoints: 0,
+    };
+  }
+
+  // Fetch all issues in the sprint
+  const issues = await prisma.issue.findMany({
+    where: { sprintId },
+    select: {
+      id: true,
+      storyPoints: true,
+      createdAt: true,
+      status: { select: { id: true, name: true } },
+    },
+  });
+
+  const totalPoints = issues.reduce(
+    (sum, issue) => sum + (issue.storyPoints ?? 0),
+    0,
+  );
+
+  const issueIds = issues.map((i) => i.id);
+
+  // Fetch status change activities
+  const statusActivities = await prisma.activityLog.findMany({
+    where: {
+      issueId: { in: issueIds },
+      field: 'status',
+    },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  // Build maps for quick lookup
+  const issuePointsMap = new Map<string, number>();
+  const issueCreatedMap = new Map<string, Date>();
+  for (const issue of issues) {
+    issuePointsMap.set(issue.id, issue.storyPoints ?? 0);
+    issueCreatedMap.set(issue.id, issue.createdAt);
+  }
+
+  const endBoundary = sprint.status === 'ACTIVE'
+    ? new Date()
+    : sprint.endDate ?? new Date();
+
+  const startDate = new Date(sprint.startDate);
+  startDate.setHours(0, 0, 0, 0);
+
+  const endDate = new Date(endBoundary);
+  endDate.setHours(23, 59, 59, 999);
+
+  const data: Array<{ date: string; total: number; completed: number }> = [];
+
+  for (
+    let current = new Date(startDate);
+    current <= endDate;
+    current.setDate(current.getDate() + 1)
+  ) {
+    const dayEnd = new Date(current);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    // Total scope: sum of story points for issues added to sprint by this day
+    let scopePoints = 0;
+    for (const [issueId, createdAt] of issueCreatedMap) {
+      if (createdAt <= dayEnd) {
+        scopePoints += issuePointsMap.get(issueId) ?? 0;
+      }
+    }
+
+    // Completed: track latest status per issue up to this day
+    const latestStatusByIssue = new Map<string, string>();
+    for (const activity of statusActivities) {
+      if (activity.createdAt <= dayEnd && activity.newValue) {
+        latestStatusByIssue.set(activity.issueId, activity.newValue);
+      }
+    }
+
+    let completedPoints = 0;
+    for (const [issueId, statusName] of latestStatusByIssue) {
+      if (DONE_STATUS_NAMES.includes(statusName.toLowerCase())) {
+        completedPoints += issuePointsMap.get(issueId) ?? 0;
+      }
+    }
+
+    data.push({
+      date: current.toISOString().split('T')[0],
+      total: scopePoints,
+      completed: completedPoints,
+    });
+  }
+
+  return {
+    sprint: {
+      id: sprint.id,
+      name: sprint.name,
+      startDate: sprint.startDate,
+      endDate: sprint.endDate,
+      status: sprint.status,
+    },
+    data,
+    totalPoints,
+  };
+}
+
+/**
+ * Computes sprint health data including burn-up chart, scope changes,
+ * health score, and completion forecast.
+ *
+ * Health score (0-100) is based on progress relative to time elapsed.
+ * A score of 100 means the sprint is perfectly on track.
+ *
+ * @param sprintId - The sprint to analyze
+ * @param userId - The requesting user's ID
+ * @returns Sprint health data
+ * @throws NotFoundError if the sprint does not exist
+ */
+export async function getSprintHealth(sprintId: string, userId: string) {
+  const sprint = await prisma.sprint.findUnique({
+    where: { id: sprintId },
+  });
+
+  if (!sprint) {
+    throw new NotFoundError('Sprint');
+  }
+
+  await verifyProjectAccess(sprint.projectId, userId);
+
+  // Fetch issues in the sprint
+  const issues = await prisma.issue.findMany({
+    where: { sprintId },
+    select: {
+      id: true,
+      storyPoints: true,
+      createdAt: true,
+      status: { select: { name: true } },
+    },
+  });
+
+  const totalPoints = issues.reduce(
+    (sum, issue) => sum + (issue.storyPoints ?? 0),
+    0,
+  );
+
+  const completedPoints = issues
+    .filter((issue) =>
+      DONE_STATUS_NAMES.includes(issue.status.name.toLowerCase()),
+    )
+    .reduce((sum, issue) => sum + (issue.storyPoints ?? 0), 0);
+
+  const totalIssues = issues.length;
+  const completedIssues = issues.filter((issue) =>
+    DONE_STATUS_NAMES.includes(issue.status.name.toLowerCase()),
+  ).length;
+
+  // Calculate scope changes: issues added after the sprint start date
+  let scopeChanges = 0;
+  if (sprint.startDate) {
+    scopeChanges = issues.filter(
+      (issue) => issue.createdAt > sprint.startDate!,
+    ).length;
+  }
+
+  // Calculate time elapsed percentage
+  let timeElapsedPercent = 0;
+  if (sprint.startDate && sprint.endDate) {
+    const totalDuration = sprint.endDate.getTime() - sprint.startDate.getTime();
+    const elapsed = Math.min(
+      Date.now() - sprint.startDate.getTime(),
+      totalDuration,
+    );
+    timeElapsedPercent = totalDuration > 0 ? (elapsed / totalDuration) * 100 : 0;
+  }
+
+  // Calculate progress percentage
+  const progressPercent = totalPoints > 0
+    ? (completedPoints / totalPoints) * 100
+    : 0;
+
+  // Health score: how close progress is to the ideal (time elapsed)
+  // Score is 100 when progress matches or exceeds time elapsed
+  let healthScore = 100;
+  if (timeElapsedPercent > 0) {
+    const ratio = progressPercent / timeElapsedPercent;
+    healthScore = Math.min(100, Math.round(ratio * 100));
+  }
+
+  // Completion forecast: estimate when sprint will be done at current rate
+  let completionForecast: string | null = null;
+  if (sprint.startDate && completedPoints > 0 && totalPoints > completedPoints) {
+    const elapsed = Date.now() - sprint.startDate.getTime();
+    const rate = completedPoints / elapsed; // points per millisecond
+    const remainingPoints = totalPoints - completedPoints;
+    const remainingMs = remainingPoints / rate;
+    const forecastDate = new Date(Date.now() + remainingMs);
+    completionForecast = forecastDate.toISOString();
+  } else if (completedPoints >= totalPoints && totalPoints > 0) {
+    completionForecast = new Date().toISOString();
+  }
+
+  // Build burn-up data using snapshots if available, else use current state
+  const snapshots = await prisma.sprintSnapshot.findMany({
+    where: { sprintId },
+    orderBy: { snapshotDate: 'asc' },
+  });
+
+  const burnupData = snapshots.length > 0
+    ? snapshots.map((snapshot) => ({
+        date: snapshot.snapshotDate.toISOString().split('T')[0],
+        total: snapshot.totalPoints,
+        completed: snapshot.completedPoints,
+      }))
+    : [{
+        date: new Date().toISOString().split('T')[0],
+        total: totalPoints,
+        completed: completedPoints,
+      }];
+
+  return {
+    sprint: {
+      id: sprint.id,
+      name: sprint.name,
+      startDate: sprint.startDate,
+      endDate: sprint.endDate,
+      status: sprint.status,
+    },
+    totalPoints,
+    completedPoints,
+    totalIssues,
+    completedIssues,
+    scopeChanges,
+    healthScore,
+    timeElapsedPercent: Math.round(timeElapsedPercent),
+    progressPercent: Math.round(progressPercent),
+    completionForecast,
+    burnupData,
+  };
 }

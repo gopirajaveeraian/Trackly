@@ -25,11 +25,14 @@ function sanitizeValue(value: unknown): unknown {
 }
 
 /**
- * Middleware to sanitize request body against XSS attacks.
+ * Middleware to sanitize request body and query against XSS attacks.
  */
 export function sanitizeBody(req: Request, _res: Response, next: NextFunction): void {
   if (req.body && typeof req.body === 'object') {
     req.body = sanitizeValue(req.body);
+  }
+  if (req.query && typeof req.query === 'object') {
+    req.query = sanitizeValue(req.query) as typeof req.query;
   }
   next();
 }

@@ -9,6 +9,11 @@ import attachmentRoutes from './attachment.routes';
 import reportRoutes from './report.routes';
 import workflowRoutes from './workflow.routes';
 import searchRoutes from './search.routes';
+import releaseRoutes from './release.routes';
+import capacityRoutes from './capacity.routes';
+import integrationRoutes from './integration.routes';
+import roadmapRoutes from './roadmap.routes';
+import jiraImportRoutes from './jira-import.routes';
 
 const router = Router();
 
@@ -22,6 +27,11 @@ router.use('/attachments', attachmentRoutes);
 router.use('/reports', reportRoutes);
 router.use('/workflows', workflowRoutes);
 router.use('/search', searchRoutes);
+router.use('/releases', releaseRoutes);
+router.use('/capacities', capacityRoutes);
+router.use('/integrations', integrationRoutes);
+router.use('/roadmap', roadmapRoutes);
+router.use('/jira-import', jiraImportRoutes);
 
 // Health check
 router.get('/health', (_req, res) => {

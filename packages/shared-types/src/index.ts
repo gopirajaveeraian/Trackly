@@ -8,3 +8,6 @@ export * from './sprint';
 export * from './comment';
 export * from './notification';
 export * from './common';
+export * from './release';
+export * from './capacity';
+export * from './integration';

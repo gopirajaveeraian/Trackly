@@ -28,9 +28,13 @@ async function main(): Promise<void> {
   await prisma.notification.deleteMany();
   await prisma.attachment.deleteMany();
   await prisma.comment.deleteMany();
+  await prisma.capacity.deleteMany();
+  await prisma.sprintSnapshot.deleteMany();
+  await prisma.release.deleteMany();
   await prisma.issue.deleteMany();
   await prisma.sprint.deleteMany();
   await prisma.status.deleteMany();
+  await prisma.integration.deleteMany();
   await prisma.project.deleteMany();
   await prisma.workspaceMember.deleteMany();
   await prisma.workspace.deleteMany();
@@ -625,6 +629,136 @@ async function main(): Promise<void> {
   await prisma.timeLog.createMany({ data: timeLogData });
   console.log(`Created ${timeLogData.length} time logs`);
 
+  // ─── Releases ────────────────────────────────────────────────────────────
+  console.log('  Creating releases...');
+
+  const releaseV1 = await prisma.release.create({
+    data: {
+      name: 'v1.0 - Foundation',
+      description: 'Initial release with auth, workspace, project, and basic issue management.',
+      status: 'RELEASED',
+      startDate: daysAgo(60),
+      releaseDate: daysAgo(30),
+      projectId: project.id,
+    },
+  });
+
+  const releaseV1_1 = await prisma.release.create({
+    data: {
+      name: 'v1.1 - Board & Sprint',
+      description: 'Kanban board, sprint management, drag-and-drop, and backlog improvements.',
+      status: 'IN_PROGRESS',
+      startDate: daysAgo(28),
+      releaseDate: daysFromNow(14),
+      projectId: project.id,
+    },
+  });
+
+  const releaseV2 = await prisma.release.create({
+    data: {
+      name: 'v2.0 - Collaboration',
+      description: 'Real-time notifications, email alerts, file attachments, and reporting dashboards.',
+      status: 'PLANNING',
+      startDate: daysFromNow(15),
+      releaseDate: daysFromNow(60),
+      projectId: project.id,
+    },
+  });
+
+  // Link issues to releases by sprint
+  // Sprint 1 + Sprint 2 issues -> releaseV1
+  await prisma.issue.updateMany({
+    where: { sprintId: sprint1.id },
+    data: { releaseId: releaseV1.id },
+  });
+  await prisma.issue.updateMany({
+    where: { sprintId: sprint2.id },
+    data: { releaseId: releaseV1.id },
+  });
+
+  // Sprint 3 issues -> releaseV1_1
+  await prisma.issue.updateMany({
+    where: { sprintId: sprint3.id },
+    data: { releaseId: releaseV1_1.id },
+  });
+
+  // Sprint 4 issues -> releaseV2
+  await prisma.issue.updateMany({
+    where: { sprintId: sprint4.id },
+    data: { releaseId: releaseV2.id },
+  });
+
+  console.log('Created 3 releases and linked issues');
+
+  // ─── Sprint Snapshots ────────────────────────────────────────────────────
+  console.log('  Creating sprint snapshots...');
+
+  // Create daily snapshots for the active sprint over the past 7 days
+  const snapshotData = [];
+  for (let i = 7; i >= 0; i--) {
+    const dayProgress = (7 - i) / 7;
+    snapshotData.push({
+      sprintId: sprint4.id,
+      totalPoints: 34 + (i < 3 ? 5 : 0), // scope increased on day 5
+      completedPoints: Math.floor(34 * dayProgress * 0.8),
+      totalIssues: 14 + (i < 3 ? 2 : 0),
+      completedIssues: Math.floor(14 * dayProgress * 0.8),
+      scopeChanges: i < 3 ? 1 : 0,
+      snapshotDate: daysAgo(i),
+    });
+  }
+
+  await prisma.sprintSnapshot.createMany({ data: snapshotData });
+  console.log(`Created ${snapshotData.length} sprint snapshots`);
+
+  // ─── Capacity ────────────────────────────────────────────────────────────
+  console.log('  Creating capacity data...');
+
+  const capacityData = [
+    { userId: users[0].id, sprintId: sprint4.id, availableHours: 40, allocatedHours: 32 },
+    { userId: users[1].id, sprintId: sprint4.id, availableHours: 40, allocatedHours: 36 },
+    { userId: users[2].id, sprintId: sprint4.id, availableHours: 32, allocatedHours: 28 },
+    { userId: users[3].id, sprintId: sprint4.id, availableHours: 40, allocatedHours: 40 },
+    { userId: users[4].id, sprintId: sprint4.id, availableHours: 24, allocatedHours: 20 },
+    { userId: users[5].id, sprintId: sprint4.id, availableHours: 40, allocatedHours: 38 },
+    { userId: users[6].id, sprintId: sprint4.id, availableHours: 40, allocatedHours: 44 }, // over-allocated
+    { userId: users[7].id, sprintId: sprint4.id, availableHours: 40, allocatedHours: 16 },
+  ];
+
+  await prisma.capacity.createMany({ data: capacityData });
+  console.log(`Created ${capacityData.length} capacity entries`);
+
+  // ─── Integrations ────────────────────────────────────────────────────────
+  console.log('  Creating integrations...');
+
+  await prisma.integration.createMany({
+    data: [
+      {
+        type: 'GITHUB',
+        name: 'Trackly GitHub Repo',
+        config: { repositoryUrl: 'https://github.com/trackly-team/trackly', personalAccessToken: '***', webhookSecret: '***' },
+        enabled: true,
+        workspaceId: workspace.id,
+      },
+      {
+        type: 'SLACK',
+        name: 'Trackly Slack',
+        config: { webhookUrl: 'https://hooks.slack.com/services/T00/B00/xxx', channel: '#trackly-updates', botToken: '***' },
+        enabled: true,
+        workspaceId: workspace.id,
+      },
+      {
+        type: 'CONFLUENCE',
+        name: 'Trackly Docs',
+        config: { baseUrl: 'https://trackly-team.atlassian.net/wiki', username: 'admin@trackly.com', apiToken: '***', spaceKey: 'TRK' },
+        enabled: false,
+        workspaceId: workspace.id,
+      },
+    ],
+  });
+
+  console.log('Created 3 integrations');
+
   // ─── Summary ──────────────────────────────────────────────────────────
   const totalIssues = allIssues.length;
   console.log('\n═══════════════════════════════════════════');
@@ -642,6 +776,10 @@ async function main(): Promise<void> {
   console.log(`  Watchers:        ${watcherData.length}`);
   console.log(`  Time logs:       ${timeLogData.length}`);
   console.log(`  Notifications:   ${notificationData.length}`);
+  console.log(`  Releases:        3`);
+  console.log(`  Snapshots:       ${snapshotData.length}`);
+  console.log(`  Capacity:        ${capacityData.length}`);
+  console.log(`  Integrations:    3`);
   console.log('───────────────────────────────────────────');
   console.log('  Login credentials (all users):');
   console.log('    Password: password123');

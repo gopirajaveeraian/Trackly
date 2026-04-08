@@ -11,6 +11,7 @@ import { useThemeStore } from '@/store/theme.store';
 import { LoginPage } from '@/pages/auth/LoginPage';
 import { RegisterPage } from '@/pages/auth/RegisterPage';
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage';
+import { ResetPasswordPage } from '@/pages/auth/ResetPasswordPage';
 
 // Eagerly loaded core pages
 import { DashboardPage } from '@/pages/dashboard/DashboardPage';
@@ -26,6 +27,13 @@ const SprintsPage = lazy(() => import('@/pages/sprints/SprintsPage').then(m => (
 const EpicsPage = lazy(() => import('@/pages/epics/EpicsPage').then(m => ({ default: m.EpicsPage })));
 const ReportsPage = lazy(() => import('@/pages/reports/ReportsPage').then(m => ({ default: m.ReportsPage })));
 const SettingsPage = lazy(() => import('@/pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
+const ReleasesPage = lazy(() => import('@/pages/releases/ReleasesPage').then(m => ({ default: m.ReleasesPage })));
+const RoadmapPage = lazy(() => import('@/pages/roadmap/RoadmapPage').then(m => ({ default: m.RoadmapPage })));
+const CapacityPage = lazy(() => import('@/pages/capacity/CapacityPage').then(m => ({ default: m.CapacityPage })));
+const SprintHealthPage = lazy(() => import('@/pages/sprint-health/SprintHealthPage').then(m => ({ default: m.SprintHealthPage })));
+const IntegrationsPage = lazy(() => import('@/pages/integrations/IntegrationsPage').then(m => ({ default: m.IntegrationsPage })));
+const DependenciesPage = lazy(() => import('@/pages/dependencies/DependenciesPage').then(m => ({ default: m.DependenciesPage })));
+const JiraImportPage = lazy(() => import('@/pages/jira-import/JiraImportPage').then(m => ({ default: m.JiraImportPage })));
 
 function PageLoader() {
   return (
@@ -51,6 +59,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
         </Route>
 
         {/* Protected routes */}
@@ -72,6 +81,13 @@ export default function App() {
           <Route path="/reports/:projectId" element={<ReportsPage />} />
           <Route path="/issues/:id" element={<IssueDetailPage />} />
           <Route path="/my-issues" element={<MyIssuesPage />} />
+          <Route path="/releases/:projectId" element={<ReleasesPage />} />
+          <Route path="/roadmap/:projectId" element={<RoadmapPage />} />
+          <Route path="/capacity/:projectId" element={<CapacityPage />} />
+          <Route path="/sprint-health/:projectId" element={<SprintHealthPage />} />
+          <Route path="/integrations" element={<IntegrationsPage />} />
+          <Route path="/dependencies/:projectId" element={<DependenciesPage />} />
+          <Route path="/jira-import" element={<JiraImportPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
 

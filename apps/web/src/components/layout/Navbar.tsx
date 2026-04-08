@@ -257,9 +257,9 @@ export function Navbar({ breadcrumbs = [] }: NavbarProps) {
   const displayedResults = searchResults?.data?.slice(0, 8) ?? [];
 
   return (
-    <header className="h-14 bg-surface border-b border-th-border flex items-center justify-between px-6 flex-shrink-0">
+    <header className="h-14 bg-surface border-b border-th-border flex items-center justify-between px-6 flex-shrink-0" role="banner">
       {/* Breadcrumbs */}
-      <nav className="flex items-center space-x-1 text-sm">
+      <nav className="flex items-center space-x-1 text-sm" aria-label="Breadcrumb">
         {breadcrumbs.map((crumb, index) => (
           <div key={crumb.label} className="flex items-center">
             {index > 0 && (
@@ -286,8 +286,10 @@ export function Navbar({ breadcrumbs = [] }: NavbarProps) {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
             id="global-search"
-            type="text"
-            placeholder="Search..."
+            type="search"
+            placeholder="Search issues..."
+            aria-label="Search issues"
+            autoComplete="off"
             value={searchQuery}
             onChange={handleSearchChange}
             onFocus={handleSearchFocus}
@@ -399,7 +401,9 @@ export function Navbar({ breadcrumbs = [] }: NavbarProps) {
           <button
             onClick={handleToggleNotifications}
             className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-            aria-label="Notifications"
+            aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
+            aria-expanded={showNotifications}
+            aria-haspopup="true"
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
@@ -500,6 +504,9 @@ export function Navbar({ breadcrumbs = [] }: NavbarProps) {
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="flex items-center gap-2 hover:bg-gray-50 rounded-lg p-1 pr-2 transition-colors"
+            aria-label="User menu"
+            aria-expanded={showUserMenu}
+            aria-haspopup="true"
           >
             <Avatar
               name={user?.name || 'User'}

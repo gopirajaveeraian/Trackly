@@ -37,3 +37,19 @@ export enum IssueLinkType {
   RELATES_TO = 'RELATES_TO',
   DUPLICATES = 'DUPLICATES',
 }
+
+export enum ReleaseStatus {
+  PLANNING = 'PLANNING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  RELEASED = 'RELEASED',
+  ARCHIVED = 'ARCHIVED',
+}
+
+export enum IntegrationType {
+  GITHUB = 'GITHUB',
+  CONFLUENCE = 'CONFLUENCE',
+  SLACK = 'SLACK',
+  JIRA = 'JIRA',
+  BITBUCKET = 'BITBUCKET',
+  GITLAB = 'GITLAB',
+}
